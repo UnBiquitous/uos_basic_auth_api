@@ -5,7 +5,15 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import br.unb.unbiquitous.ubiquitos.Logger;
+import org.unbiquitous.uos.core.AuthenticationHandler;
+import org.unbiquitous.uos.core.Logger;
+import org.unbiquitous.uos.core.application.UOSMessageContext;
+import org.unbiquitous.uos.core.messageEngine.MessageHandler;
+import org.unbiquitous.uos.core.messageEngine.TranslationHandler;
+import org.unbiquitous.uos.core.messageEngine.dataType.UpDevice;
+import org.unbiquitous.uos.core.messageEngine.messages.ServiceCall;
+import org.unbiquitous.uos.core.messageEngine.messages.ServiceResponse;
+
 import br.unb.unbiquitous.ubiquitos.authentication.Cipher;
 import br.unb.unbiquitous.ubiquitos.authentication.SessionData;
 import br.unb.unbiquitous.ubiquitos.authentication.SessionKeyDao;
@@ -15,13 +23,6 @@ import br.unb.unbiquitous.ubiquitos.authentication.exception.IdNotFoundException
 import br.unb.unbiquitous.ubiquitos.authentication.messages.FirstMessage;
 import br.unb.unbiquitous.ubiquitos.authentication.messages.SecondMessage;
 import br.unb.unbiquitous.ubiquitos.authentication.messages.ThirdMessage;
-import br.unb.unbiquitous.ubiquitos.uos.application.UOSMessageContext;
-import br.unb.unbiquitous.ubiquitos.uos.messageEngine.MessageHandler;
-import br.unb.unbiquitous.ubiquitos.uos.messageEngine.TranslationHandler;
-import br.unb.unbiquitous.ubiquitos.uos.messageEngine.dataType.UpDevice;
-import br.unb.unbiquitous.ubiquitos.uos.messageEngine.messages.ServiceCall;
-import br.unb.unbiquitous.ubiquitos.uos.messageEngine.messages.ServiceResponse;
-import br.unb.unbiquitous.ubiquitos.uos.security.AuthenticationHandler;
 
 /**
  * 

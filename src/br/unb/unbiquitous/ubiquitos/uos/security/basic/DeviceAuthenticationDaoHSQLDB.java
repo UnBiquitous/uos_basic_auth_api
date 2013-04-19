@@ -6,7 +6,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import br.unb.unbiquitous.ubiquitos.Logger;
+import org.unbiquitous.uos.core.Logger;
+
 import br.unb.unbiquitous.ubiquitos.authentication.AuthenticationData;
 import br.unb.unbiquitous.ubiquitos.authentication.exception.DuplicateIdException;
 
