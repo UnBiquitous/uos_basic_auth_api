@@ -57,15 +57,15 @@ public class BasicSecurityHandler implements AuthenticationHandler, TranslationH
 			logger.debug("Authenticate: middleware executes second step.");
 			
 			try{
-				String hashId = serviceCall.getParameters().get("hashId");
-				String idEnc = serviceCall.getParameters().get("idEnc");
-				String ra1Enc = serviceCall.getParameters().get("ra1Enc"); 
-				String ra2Enc = serviceCall.getParameters().get("ra2Enc");
-				String hmacM1 = serviceCall.getParameters().get("hmacM1");
+				String hashId = (String) serviceCall.getParameters().get("hashId");
+				String idEnc = (String) serviceCall.getParameters().get("idEnc");
+				String ra1Enc = (String) serviceCall.getParameters().get("ra1Enc"); 
+				String ra2Enc = (String) serviceCall.getParameters().get("ra2Enc");
+				String hmacM1 = (String) serviceCall.getParameters().get("hmacM1");
 				
 				secondMessage = authentication.runSecondStep(hashId, idEnc, ra1Enc, ra2Enc, hmacM1);
 
-				Map<String, String> responseData = new HashMap<String, String>();
+				Map<String,Object> responseData = new HashMap<String,Object>();
 				
 				responseData.put("hmacM2", secondMessage.getHmac());
 				responseData.put("idEnc", secondMessage.getIdEnc());
@@ -77,7 +77,7 @@ public class BasicSecurityHandler implements AuthenticationHandler, TranslationH
 				serviceResponse.setResponseData(responseData);
 	
 			} catch (Exception e){
-				Map<String, String> responseData = new HashMap<String, String>();
+				Map<String,Object> responseData = new HashMap<String,Object>();
 				responseData.put("error", e.toString());
 				serviceResponse.setResponseData(responseData);
 				logger.fatal(e.toString());
@@ -91,12 +91,12 @@ public class BasicSecurityHandler implements AuthenticationHandler, TranslationH
 
 				try{
 						boolean result = authentication.runFourthStep (
-								serviceCall.getParameters().get("sessionKeyEnc"), 
-								serviceCall.getParameters().get("rb1"), 
-								serviceCall.getParameters().get("hmacM3"), 
-								serviceCall.getParameters().get("id"));
+								serviceCall.getParameterString("sessionKeyEnc"), 
+								serviceCall.getParameterString("rb1"), 
+								serviceCall.getParameterString("hmacM3"), 
+								serviceCall.getParameterString("id"));
 
-						Map<String, String> responseData = new HashMap<String, String>();
+						Map<String,Object> responseData = new HashMap<String,Object>();
 
 						if (result){
 							responseData.put("result", "true");
@@ -147,7 +147,7 @@ public class BasicSecurityHandler implements AuthenticationHandler, TranslationH
 
 			ServiceCall serviceCall = new ServiceCall();
 			
-			Map<String, String> authenticationData = new HashMap<String, String>();
+			Map<String,Object> authenticationData = new HashMap<String,Object>();
 
 			authenticationData.put("hashId", firstMessage.getHashId());
 			authenticationData.put("idEnc", firstMessage.getIdEnc());
@@ -169,21 +169,21 @@ public class BasicSecurityHandler implements AuthenticationHandler, TranslationH
 					firstMessage.getRa1(), 
 					firstMessage.getRa2(), 
 					deviceName, 
-					serviceResponse.getResponseData().get("hmacM2"),
-					serviceResponse.getResponseData().get("idEnc"),
-					serviceResponse.getResponseData().get("ra1IncEnc"),
-					serviceResponse.getResponseData().get("ra2IncEnc"),
-					serviceResponse.getResponseData().get("rb1Enc"),
-					serviceResponse.getResponseData().get("rb2Enc"));
+					serviceResponse.getResponseString("hmacM2"),
+					serviceResponse.getResponseString("idEnc"),
+					serviceResponse.getResponseString("ra1IncEnc"),
+					serviceResponse.getResponseString("ra2IncEnc"),
+					serviceResponse.getResponseString("rb1Enc"),
+					serviceResponse.getResponseString("rb2Enc"));
 			
-			authenticationData = new HashMap<String, String>();
+			authenticationData = new HashMap<String,Object>();
 			authenticationData.put("sessionKeyEnc", thirdMessage.getSessionKeyEnc());
 			authenticationData.put("hmacM3", thirdMessage.getHmac());
 			authenticationData.put("id", thirdMessage.getId());
 			authenticationData.put("securityType", SECURITY_TYPE);
 			
 			Cipher c = new Cipher(ka);
-			authenticationData.put("rb1", c.decrypt(serviceResponse.getResponseData().get("rb1Enc")));
+			authenticationData.put("rb1", c.decrypt(serviceResponse.getResponseString("rb1Enc")));
 			
 			serviceCall.setParameters(authenticationData);
 			serviceResponse = new ServiceResponse();
