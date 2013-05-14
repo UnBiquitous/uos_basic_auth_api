@@ -7,7 +7,7 @@ import java.util.Map;
 
 import org.unbiquitous.uos.core.AuthenticationHandler;
 import org.unbiquitous.uos.core.Logger;
-import org.unbiquitous.uos.core.application.UOSMessageContext;
+import org.unbiquitous.uos.core.applicationManager.UOSMessageContext;
 import org.unbiquitous.uos.core.messageEngine.MessageHandler;
 import org.unbiquitous.uos.core.messageEngine.TranslationHandler;
 import org.unbiquitous.uos.core.messageEngine.dataType.UpDevice;
@@ -159,7 +159,7 @@ public class BasicSecurityHandler implements AuthenticationHandler, TranslationH
 			serviceCall.setParameters(authenticationData);
 			serviceCall.setServiceType(ServiceCall.ServiceType.DISCRETE);
 			serviceCall.setService("authenticate");
-			serviceCall.setDriver("br.unb.unbiquitous.ubiquitos.driver.DeviceDriver");
+			serviceCall.setDriver("uos.DeviceDriver");
 			
 			ServiceResponse serviceResponse = messageHandler.callService(upDevice, serviceCall);
 			
