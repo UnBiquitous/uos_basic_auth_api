@@ -5,8 +5,11 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import br.unb.unbiquitous.ubiquitos.Logger;
+import org.unbiquitous.uos.core.UOSLogging;
+
 import br.unb.unbiquitous.ubiquitos.authentication.AuthenticationData;
 import br.unb.unbiquitous.ubiquitos.authentication.exception.DuplicateIdException;
 
@@ -19,7 +22,7 @@ import br.unb.unbiquitous.ubiquitos.authentication.exception.DuplicateIdExceptio
  * */
 public class DeviceAuthenticationDaoHSQLDB{
 	
-	private static final Logger logger = Logger.getLogger(AuthenticationDaoHSQLDB.class);
+	private static final Logger logger = UOSLogging.getLogger();
 
 	private static final String JDBC_DRIVER = "org.hsqldb.jdbcDriver";
 	private static final String BD_URL = "jdbc:hsqldb:mem:";
@@ -73,9 +76,9 @@ public class DeviceAuthenticationDaoHSQLDB{
 	    	con.close();
 		
     	} catch (ClassNotFoundException e) {
-			logger.error(e);
+			logger.log(Level.SEVERE,"",e);
 		} catch (SQLException e) {
-			logger.error(e);
+			logger.log(Level.SEVERE,"",e);
 		} 
     }
 
@@ -125,7 +128,7 @@ public class DeviceAuthenticationDaoHSQLDB{
             // closes connection
             con.close();
         }  catch (SQLException ex) {
-            logger.error(ex);
+            logger.log(Level.SEVERE,"",ex);
             throw new SQLException();
         }
 		return authenticationData;
@@ -154,7 +157,7 @@ public class DeviceAuthenticationDaoHSQLDB{
 			//closes connection
 			con.close();
 		} catch (SQLException e) {
-				logger.error(e);
+				logger.log(Level.SEVERE,"",e);
 		}
 	}
 
@@ -182,7 +185,7 @@ public class DeviceAuthenticationDaoHSQLDB{
 			//closes connection
 			stm.close();
 		} catch (SQLException e) {
-				logger.error(e);
+				logger.log(Level.SEVERE,"",e);
 		}
 	}
 
@@ -214,7 +217,7 @@ public class DeviceAuthenticationDaoHSQLDB{
 			stm.close();
 			con.close();
 		} catch (SQLException e) {
-				logger.error(e);
+				logger.log(Level.SEVERE,"",e);
 		}
 	}
 	

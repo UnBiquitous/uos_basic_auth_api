@@ -4,8 +4,18 @@ import java.sql.Time;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import br.unb.unbiquitous.ubiquitos.Logger;
+import org.unbiquitous.uos.core.AuthenticationHandler;
+import org.unbiquitous.uos.core.UOSLogging;
+import org.unbiquitous.uos.core.applicationManager.UOSMessageContext;
+import org.unbiquitous.uos.core.messageEngine.MessageHandler;
+import org.unbiquitous.uos.core.messageEngine.TranslationHandler;
+import org.unbiquitous.uos.core.messageEngine.dataType.UpDevice;
+import org.unbiquitous.uos.core.messageEngine.messages.ServiceCall;
+import org.unbiquitous.uos.core.messageEngine.messages.ServiceResponse;
+
 import br.unb.unbiquitous.ubiquitos.authentication.Cipher;
 import br.unb.unbiquitous.ubiquitos.authentication.SessionData;
 import br.unb.unbiquitous.ubiquitos.authentication.SessionKeyDao;
@@ -15,13 +25,6 @@ import br.unb.unbiquitous.ubiquitos.authentication.exception.IdNotFoundException
 import br.unb.unbiquitous.ubiquitos.authentication.messages.FirstMessage;
 import br.unb.unbiquitous.ubiquitos.authentication.messages.SecondMessage;
 import br.unb.unbiquitous.ubiquitos.authentication.messages.ThirdMessage;
-import br.unb.unbiquitous.ubiquitos.uos.application.UOSMessageContext;
-import br.unb.unbiquitous.ubiquitos.uos.messageEngine.MessageHandler;
-import br.unb.unbiquitous.ubiquitos.uos.messageEngine.TranslationHandler;
-import br.unb.unbiquitous.ubiquitos.uos.messageEngine.dataType.UpDevice;
-import br.unb.unbiquitous.ubiquitos.uos.messageEngine.messages.ServiceCall;
-import br.unb.unbiquitous.ubiquitos.uos.messageEngine.messages.ServiceResponse;
-import br.unb.unbiquitous.ubiquitos.uos.security.AuthenticationHandler;
 
 /**
  * 
@@ -32,7 +35,7 @@ import br.unb.unbiquitous.ubiquitos.uos.security.AuthenticationHandler;
  */
 public class BasicSecurityHandler implements AuthenticationHandler, TranslationHandler {
 
-	private static final Logger logger = Logger.getLogger(BasicSecurityHandler.class);
+	private static final Logger logger = UOSLogging.getLogger();
 	private static String SECURITY_TYPE = "BASIC";  
 	SessionKeyDao sessionKeyDao = new SessionKeyDaoHSQLDB();;
 	
@@ -53,18 +56,18 @@ public class BasicSecurityHandler implements AuthenticationHandler, TranslationH
 		
 		if (serviceCall.getParameters().containsKey("hashId")){
 			
-			logger.debug("Authenticate: middleware executes second step.");
+			logger.fine("Authenticate: middleware executes second step.");
 			
 			try{
-				String hashId = serviceCall.getParameters().get("hashId");
-				String idEnc = serviceCall.getParameters().get("idEnc");
-				String ra1Enc = serviceCall.getParameters().get("ra1Enc"); 
-				String ra2Enc = serviceCall.getParameters().get("ra2Enc");
-				String hmacM1 = serviceCall.getParameters().get("hmacM1");
+				String hashId = (String) serviceCall.getParameters().get("hashId");
+				String idEnc = (String) serviceCall.getParameters().get("idEnc");
+				String ra1Enc = (String) serviceCall.getParameters().get("ra1Enc"); 
+				String ra2Enc = (String) serviceCall.getParameters().get("ra2Enc");
+				String hmacM1 = (String) serviceCall.getParameters().get("hmacM1");
 				
 				secondMessage = authentication.runSecondStep(hashId, idEnc, ra1Enc, ra2Enc, hmacM1);
 
-				Map<String, String> responseData = new HashMap<String, String>();
+				Map<String,Object> responseData = new HashMap<String,Object>();
 				
 				responseData.put("hmacM2", secondMessage.getHmac());
 				responseData.put("idEnc", secondMessage.getIdEnc());
@@ -76,38 +79,38 @@ public class BasicSecurityHandler implements AuthenticationHandler, TranslationH
 				serviceResponse.setResponseData(responseData);
 	
 			} catch (Exception e){
-				Map<String, String> responseData = new HashMap<String, String>();
+				Map<String,Object> responseData = new HashMap<String,Object>();
 				responseData.put("error", e.toString());
 				serviceResponse.setResponseData(responseData);
-				logger.fatal(e.toString());
+				logger.severe(e.toString());
 			}
 		}
 		
 		else {
 			if (serviceCall.getParameters().containsKey("sessionKeyEnc")){
 				
-				logger.debug("Authenticate: middleware executes fourth step.");
+				logger.fine("Authenticate: middleware executes fourth step.");
 
 				try{
 						boolean result = authentication.runFourthStep (
-								serviceCall.getParameters().get("sessionKeyEnc"), 
-								serviceCall.getParameters().get("rb1"), 
-								serviceCall.getParameters().get("hmacM3"), 
-								serviceCall.getParameters().get("id"));
+								serviceCall.getParameterString("sessionKeyEnc"), 
+								serviceCall.getParameterString("rb1"), 
+								serviceCall.getParameterString("hmacM3"), 
+								serviceCall.getParameterString("id"));
 
-						Map<String, String> responseData = new HashMap<String, String>();
+						Map<String,Object> responseData = new HashMap<String,Object>();
 
 						if (result){
 							responseData.put("result", "true");
-							logger.debug("Authentication performed successfully. Service returned value \"true\"");
+							logger.fine("Authentication performed successfully. Service returned value \"true\"");
 						} else{
 							responseData.put("result", "false");
-							logger.debug("Authentication failure. Service returned value \"false\"");
+							logger.fine("Authentication failure. Service returned value \"false\"");
 						}
 
 						serviceResponse.setResponseData(responseData);
 				} catch (Exception e){
-					logger.fatal(e.toString());
+					logger.severe(e.toString());
 				}
 			}
 		}
@@ -129,24 +132,24 @@ public class BasicSecurityHandler implements AuthenticationHandler, TranslationH
 		authentication = new br.unb.unbiquitous.ubiquitos.authentication.AuthenticationHandler(authenticationDao, sessionKeyDao);
 				
 		try{
-			logger.debug("Authenticate: device " +deviceName+ " starts authentication proccess.");
+			logger.fine("Authenticate: device " +deviceName+ " starts authentication proccess.");
 			
 			String ka;
 			
 			try{
-				logger.debug("Device retrieves key from database.");
+				logger.fine("Device retrieves key from database.");
 				ka = deviceAutenticationDao.findById(deviceName).getKey();
 			} catch (NullPointerException e){
-				logger.fatal("Id not found in database");
+				logger.severe("Id not found in database");
 				throw new IdNotFoundException();
 			}
 			
-			logger.debug("Device executes first step of authentication process.");
+			logger.fine("Device executes first step of authentication process.");
 			FirstMessage firstMessage = authentication.runFirstStep(deviceName, ka);
 
 			ServiceCall serviceCall = new ServiceCall();
 			
-			Map<String, String> authenticationData = new HashMap<String, String>();
+			Map<String,Object> authenticationData = new HashMap<String,Object>();
 
 			authenticationData.put("hashId", firstMessage.getHashId());
 			authenticationData.put("idEnc", firstMessage.getIdEnc());
@@ -158,41 +161,41 @@ public class BasicSecurityHandler implements AuthenticationHandler, TranslationH
 			serviceCall.setParameters(authenticationData);
 			serviceCall.setServiceType(ServiceCall.ServiceType.DISCRETE);
 			serviceCall.setService("authenticate");
-			serviceCall.setDriver("br.unb.unbiquitous.ubiquitos.driver.DeviceDriver");
+			serviceCall.setDriver("uos.DeviceDriver");
 			
 			ServiceResponse serviceResponse = messageHandler.callService(upDevice, serviceCall);
 			
-			logger.debug("Device executes third step of authentication process.");
+			logger.fine("Device executes third step of authentication process.");
 			ThirdMessage thirdMessage = authentication.runThirdStep(
 					ka, 
 					firstMessage.getRa1(), 
 					firstMessage.getRa2(), 
 					deviceName, 
-					serviceResponse.getResponseData().get("hmacM2"),
-					serviceResponse.getResponseData().get("idEnc"),
-					serviceResponse.getResponseData().get("ra1IncEnc"),
-					serviceResponse.getResponseData().get("ra2IncEnc"),
-					serviceResponse.getResponseData().get("rb1Enc"),
-					serviceResponse.getResponseData().get("rb2Enc"));
+					serviceResponse.getResponseString("hmacM2"),
+					serviceResponse.getResponseString("idEnc"),
+					serviceResponse.getResponseString("ra1IncEnc"),
+					serviceResponse.getResponseString("ra2IncEnc"),
+					serviceResponse.getResponseString("rb1Enc"),
+					serviceResponse.getResponseString("rb2Enc"));
 			
-			authenticationData = new HashMap<String, String>();
+			authenticationData = new HashMap<String,Object>();
 			authenticationData.put("sessionKeyEnc", thirdMessage.getSessionKeyEnc());
 			authenticationData.put("hmacM3", thirdMessage.getHmac());
 			authenticationData.put("id", thirdMessage.getId());
 			authenticationData.put("securityType", SECURITY_TYPE);
 			
 			Cipher c = new Cipher(ka);
-			authenticationData.put("rb1", c.decrypt(serviceResponse.getResponseData().get("rb1Enc")));
+			authenticationData.put("rb1", c.decrypt(serviceResponse.getResponseString("rb1Enc")));
 			
 			serviceCall.setParameters(authenticationData);
 			serviceResponse = new ServiceResponse();
 			
 			serviceResponse = messageHandler.callService(upDevice, serviceCall);
 
-			logger.debug("Service Response after the fourth step: "+serviceResponse.getResponseData().values());
+			logger.fine("Service Response after the fourth step: "+serviceResponse.getResponseData().values());
 			
 		} catch (Exception e){
-			logger.error(e);
+			logger.log(Level.SEVERE,"",e);
 		} 
 	}
 	
@@ -209,8 +212,8 @@ public class BasicSecurityHandler implements AuthenticationHandler, TranslationH
 	 * @see TranslationHandler#decode(String, String)
 	 */
 	public String decode(String originalMessage, String deviceName){
-		logger.debug("Uncapsulating request (decrypt) : "+originalMessage);
-		logger.debug("Device name: "+deviceName);
+		logger.fine("Uncapsulating request (decrypt) : "+originalMessage);
+		logger.fine("Device name: "+deviceName);
 
 		// creates new String to store result
 		String processedMessage = null;
@@ -237,14 +240,14 @@ public class BasicSecurityHandler implements AuthenticationHandler, TranslationH
 				//decrypts original message
 				processedMessage = cipher.decrypt(originalMessage);
 				
-				logger.debug("into request: "+processedMessage);
+				logger.fine("into request: "+processedMessage);
 				return processedMessage;
 			} else{
 				throw new ExpiredSessionKeyException();
 			}
 			
 		} catch(Exception ex){ 
-			logger.fatal(ex.toString());
+			logger.severe(ex.toString());
     	}
 		return processedMessage;
 	}
@@ -253,7 +256,7 @@ public class BasicSecurityHandler implements AuthenticationHandler, TranslationH
 	 * @see TranslationHandler#encode(String, String)
 	 */
 	public String encode(String originalMessage, String deviceName){
-		logger.debug("Encapsulating response : "+originalMessage+", device name:"+deviceName);
+		logger.fine("Encapsulating response : "+originalMessage+", device name:"+deviceName);
 
 		// creates new String to store result
 		String processedMessage = null;
@@ -279,7 +282,7 @@ public class BasicSecurityHandler implements AuthenticationHandler, TranslationH
 				
 				//decrypts original message
 				processedMessage = cipher.encrypt(originalMessage);
-				logger.debug("into response (encrypt) : "+processedMessage);
+				logger.fine("into response (encrypt) : "+processedMessage);
 				
 				return processedMessage;
 			} else{
@@ -287,7 +290,7 @@ public class BasicSecurityHandler implements AuthenticationHandler, TranslationH
 			}
 			
 		} catch(Exception ex){ 
-			logger.fatal(ex.toString());
+			logger.severe(ex.toString());
     	}
 		
 		return processedMessage;
